@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Darwin
 import IOKit.ps
@@ -102,13 +103,26 @@ struct CleanupService {
         var failures: [CleanupFailure] = []
 
         for app in apps {
+            if isApplicationRunning(app) {
+                failures.append(CleanupFailure(
+                    name: app.name,
+                    path: app.url.path,
+                    reason: "This app is currently open. Quit it first, then try uninstall again."
+                ))
+                continue
+            }
+
             do {
                 var resultingURL: NSURL?
                 try fileManager.trashItem(at: app.url, resultingItemURL: &resultingURL)
                 movedIDs.insert(app.id)
                 bytes += app.size
             } catch {
-                failures.append(CleanupFailure(name: app.name, path: app.url.path, reason: error.localizedDescription))
+                failures.append(CleanupFailure(
+                    name: app.name,
+                    path: app.url.path,
+                    reason: uninstallFailureReason(for: error)
+                ))
             }
         }
 
@@ -132,6 +146,33 @@ struct CleanupService {
         }
 
         return CleanupResult(movedIDs: movedIDs, bytes: bytes, failures: failures)
+    }
+
+    private func isApplicationRunning(_ app: AppInventoryItem) -> Bool {
+        NSWorkspace.shared.runningApplications.contains { runningApp in
+            if let bundleIdentifier = app.bundleIdentifier, !bundleIdentifier.isEmpty {
+                return runningApp.bundleIdentifier == bundleIdentifier
+            }
+            return runningApp.bundleURL?.path == app.url.path
+        }
+    }
+
+    private func uninstallFailureReason(for error: Error) -> String {
+        let nsError = error as NSError
+
+        if nsError.domain == NSCocoaErrorDomain {
+            if nsError.code == NSFileWriteNoPermissionError || nsError.code == NSFileNoSuchFileError {
+                return "macOS denied this uninstall. Try again from Finder with admin authentication."
+            }
+        }
+
+        if nsError.domain == NSPOSIXErrorDomain {
+            if nsError.code == Int(EACCES) || nsError.code == Int(EPERM) {
+                return "Permission denied by macOS. Use Finder and authenticate with your password."
+            }
+        }
+
+        return nsError.localizedDescription
     }
 }
 

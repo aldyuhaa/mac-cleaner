@@ -680,6 +680,16 @@ struct FailedItemsView: View {
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.52))
                         .lineLimit(1)
+
+                    HStack {
+                        Spacer()
+                        Button("Reveal in Finder") {
+                            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: failure.path)])
+                        }
+                        .buttonStyle(.plain)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.cyan)
+                    }
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)

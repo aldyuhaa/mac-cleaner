@@ -72,6 +72,41 @@ dist/Mac Cleaner.app
 
 You can double click that `.app` from Finder. If macOS warns because this is locally built and not notarized, right-click the app, choose `Open`, then confirm.
 
+## Share to Other People (Free Path)
+
+Use this to generate a shareable zip and checksum:
+
+```bash
+./scripts/release_free.sh
+```
+
+Generated files:
+
+```text
+dist/release/Mac-Cleaner.zip
+dist/release/Mac-Cleaner.sha256
+```
+
+How to share:
+
+1. Upload `Mac-Cleaner.zip` and `Mac-Cleaner.sha256` to GitHub Release or cloud storage.
+2. Share both files to users.
+
+How users verify checksum:
+
+```bash
+shasum -a 256 -c Mac-Cleaner.sha256
+```
+
+If output is `OK`, the file matches your original build.
+
+## End User Install
+
+1. Download `Mac-Cleaner.zip`.
+2. Extract the zip.
+3. Move `Mac Cleaner.app` into `Applications` (optional but recommended).
+4. First launch: right-click app -> `Open` -> confirm.
+
 ## Packaging Note
 
 SwiftUI does not need a separate install. It comes with Apple's macOS SDK.
